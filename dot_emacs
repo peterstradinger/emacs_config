@@ -1,0 +1,308 @@
+(add-to-list 'load-path "~/.emacs.d/")
+(global-subword-mode)
+
+;;; Tab management
+
+;; Spaces instead of tabs
+(setq-default indent-tabs-mode nil)
+
+;; If there is a tab, make it the size of 2 spaces
+(setq-default tab-width 2)
+
+
+(defun copy-line (&optional arg)
+  "Do a kill-line but copy rather than kill.  This function directly calls
+kill-line, so see documentation of kill-line for how to use it including prefix
+argument and relevant variables.  This function works by temporarily making the
+buffer read-only, so I suggest setting kill-read-only-ok to t."
+  (interactive "P")
+  (toggle-read-only 1)
+  (kill-line arg)
+  (toggle-read-only 0))
+ 
+(setq-default kill-read-only-ok t)
+(global-set-key "\C-c\C-k" 'copy-line)    
+
+(defadvice show-paren-function
+      (after show-matching-paren-offscreen activate)
+      "If the matching paren is offscreen, show the matching line in the
+        echo area. Has no effect if the character before point is not of
+        the syntax class ')'."
+      (interactive)
+      (if (not (minibuffer-prompt))
+          (let ((matching-text nil))
+            ;; Only call `blink-matching-open' if the character before point
+            ;; is a close parentheses type character. Otherwise, there's not
+            ;; really any point, and `blink-matching-open' would just echo
+            ;; "Mismatched parentheses", which gets really annoying.
+            (if (char-equal (char-syntax (char-before (point))) ?\))
+                (setq matching-text (blink-matching-open)))
+            (if (not (null matching-text))
+                (message matching-text)))))
+(show-paren-mode)
+
+(set-face-background 'show-paren-match-face (face-background 'default))
+(set-face-foreground 'show-paren-match-face "red")
+(set-face-attribute 'show-paren-match-face nil :weight 'extra-bold)
+
+
+;; linum mode
+(require 'linum)
+(global-linum-mode 1)
+(global-visual-line-mode 1)
+(add-hook 'linum-before-numbering-hook
+	  (lambda () (setq linum-format "%d ")))
+
+(fset 'insert-blank-line-previous
+   [?\C-a return ?\C-p tab])
+
+(fset 'insert-blank-line-after
+   [?\C-e return ?\C-p tab])
+
+
+(setq-default kill-read-only-ok t)
+(global-set-key "\C-c\C-k" 'copy-line)
+
+(global-set-key (kbd "C-o") 'insert-blank-line-previous)
+(global-set-key (kbd "C-x C-f") 'lusty-file-explorer)
+(global-set-key (kbd "C-x C-b") 'lusty-buffer-explorer)
+
+(define-key global-map [f1] 'copy-to-register)
+(define-key global-map [f2] 'insert-register)
+(define-key global-map [f3] 'point-to-register)
+(define-key global-map [f4] 'jump-to-register)
+(define-key global-map [f5] 'start-kbd-macro)
+(define-key global-map [f6] 'end-kbd-macro)
+
+;; "y or n" instead of "yes or no"
+(fset 'yes-or-no-p 'y-or-n-p)
+;; Display line and column numbers
+(setq line-number-mode    t)
+(setq column-number-mode  t)
+
+;; Make sure all backup files only live in one place
+
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+
+;; Map the window manipulation keys to meta 0, 1, 2, o
+(global-set-key (kbd "M-3") 'split-window-horizontally) ; was digit-argument
+(global-set-key (kbd "M-2") 'split-window-vertically) ; was digit-argument
+(global-set-key (kbd "M-1") 'delete-other-windows) ; was digit-argument
+(global-set-key (kbd "M-0") 'delete-window) ; was digit-argument
+(global-set-key (kbd "M-o") 'other-window) ; was facemenu-keymap
+;; To help Unlearn C-x 0, 1, 2, o
+(global-unset-key (kbd "C-x 3")) ; was split-window-horizontally
+(global-unset-key (kbd "C-x 2")) ; was split-window-vertically
+(global-unset-key (kbd "C-x 1")) ; was delete-other-windows
+(global-unset-key (kbd "C-x 0")) ; was delete-window
+(global-unset-key (kbd "C-x o")) ; was other-window
+
+;; Easier buffer killing
+(global-set-key (kbd "M-k") 'kill-this-buffer)
+
+(global-set-key (kbd "M-[ 5 c") 'bs-cycle-next)
+(global-set-key (kbd "M-[ 5 d") 'bs-cycle-previous)
+
+;; zap-up-to-char, forward-to-word, backward-to-word, etc
+(require 'misc)
+
+;; Improved navigation and editing (assumes misc.el)
+(global-set-key (kbd "M-Z") 'zap-up-to-char)
+(global-set-key (kbd "M-F") 'forward-to-word)
+(global-set-key (kbd "M-B") 'backward-to-word)
+
+(global-set-key (kbd "C-c l") 'linum-mode)
+
+(require 'uniquify)
+(setq 
+ uniquify-buffer-name-style 'reverse
+ uniquify-separator ":")
+
+(global-set-key "\M- " 'hippie-expand)
+
+;; recent files
+(require 'recentf)
+(recentf-mode 1)
+(setq recentf-max-menu-items 25)
+(global-set-key (kbd "C-x C-r") 'recentf-open-files)
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(inhibit-startup-buffer-menu t)
+ '(inhibit-startup-screen t)
+ '(js-indent-level 2))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(region ((t (:background "black" :foreground "white"))))
+ '(yas/field-highlight-face ((((class color) (background light)) (:background "gray7")))))
+
+(defun toggle-identifier-naming-style ()
+  "Toggles the symbol at point between C-style naming,
+      e.g. `hello_world_string', and camel case,
+      e.g. `HelloWorldString'."
+  (interactive)
+  (let* ((symbol-pos (bounds-of-thing-at-point 'symbol))
+	 case-fold-search symbol-at-point cstyle regexp func)
+    (unless symbol-pos
+      (error "No symbol at point"))
+    (save-excursion
+      (narrow-to-region (car symbol-pos) (cdr symbol-pos))
+      (setq cstyle (string-match-p "_" (buffer-string))
+	    regexp (if cstyle "\\(?:\\_<\\|_\\)\\(\\w\\)" "\\([A-Z]\\)")
+	    func (if cstyle
+		     'capitalize
+		   (lambda (s)
+		     (concat (if (= (match-beginning 1)
+				    (car symbol-pos))
+				 ""
+			       "_")
+			     (downcase s)))))
+      (goto-char (point-min))
+      (while (re-search-forward regexp nil t)
+	(replace-match (funcall func (match-string 1))
+		       t nil))
+      (widen))))
+
+;; Line numbers in the margin
+(require 'init-linum)
+;;(global-linum-mode 1)
+
+(icomplete-mode 99)
+
+
+(add-to-list 'auto-mode-alist '("\\.rake$" . ruby-mode))
+(add-to-list 'auto-mode-alist '("\\.rhtml$" . ruby-mode))
+(add-to-list 'auto-mode-alist '("\\.html.erb$" . ruby-mode))
+(add-to-list 'auto-mode-alist '("\\.erb$" . ruby-mode))
+
+(defun normal-python-compile ()
+  "Use compile to run python programs"
+  (interactive)
+  (save-buffer)
+  (message (pwd))
+  (compile (concat "python " (buffer-name))))
+
+
+(defun django-compile()
+  "running Django style compile for tests"
+  (message "compiling for django")
+  (save-buffer)
+  (setq app (nth 1 (nreverse (split-string default-directory "/"))))
+  (compile (concat "../manage.py test " app "." (python-current-defun)))
+)
+
+(defun python-compile ()
+  "Run tests if in Django"
+  (interactive)
+   (if (string= (file-name-extension (buffer-file-name (current-buffer))) "py")
+       (if (file-exists-p "../manage.py")
+           (django-compile)
+         (normal-python-compile)
+         )
+     (message "Error: not python")
+   )
+ )
+
+(defun rails-compile ()
+  "run tests if in rails"
+  (interactive)
+  (message "compiling for rails")
+  (re-search-backward "\\bit" nil t)
+  (let ( 
+        (line-number (number-to-string (line-number-at-pos)))
+        (spec (buffer-file-name))
+        )
+                      
+    (compile (concat "../../script/spec " spec " -l " line-number))
+    )
+  )
+
+(defun normal-ruby-compile ()
+  "Use compile to run ruby programs"
+  (interactive)
+  (save-buffer)
+  (compile (concat "ruby " (buffer-name))))
+
+(defun ruby-compile ()
+  "Run tests if in Rails"
+  (interactive)
+   (if (string= (file-name-extension (buffer-file-name (current-buffer))) "rb")
+       (if (file-exists-p "../../config/environment.rb")
+           (rails-compile)
+         (normal-ruby-compile)
+         )
+     (message "Error: not ruby")
+   )
+ )
+
+
+(defun shell-compile ()
+  "Use compile to run shell programs"
+  (interactive)
+  (save-buffer)
+  (compile (concat "/bin/bash " (buffer-name))))
+
+(defun clisp-compile ()
+  "Use compile to run common lisp programs"
+  (interactive)
+  (save-buffer)
+  (compile (concat "clisp " (buffer-name))))
+
+
+(setq compilation-scroll-output t)
+
+
+
+;; compilation mode
+
+(add-hook 'python-mode-hook
+          (lambda ()
+            (local-set-key (kbd "C-c C-c") 'python-compile)))
+
+(add-hook 'ruby-mode-hook
+          (lambda ()
+            (local-set-key (kbd "C-c C-c") 'ruby-compile)))
+
+(add-hook 'sh-mode-hook
+          (lambda ()
+            (local-set-key (kbd "C-c C-c") 'shell-compile)))
+
+(add-hook 'lisp-mode-hook
+          (lambda ()
+            (local-set-key (kbd "C-c C-c") 'clisp-compile)))
+
+(defun toolegit ()
+  "Too Legit to quit"
+  (interactive)
+  (save-buffers-kill-terminal)
+)
+
+(add-hook 'python-mode-hook '(lambda ()
+                                 (local-set-key (kbd "RET") 'newline-and-indent)))
+
+(yas/load-directory "~/.emacs.d/local/snippets")
+
+
+(defun cur-file ()
+  "Return the filename (without directory) of the current buffer"
+  (file-name-nondirectory (buffer-file-name (current-buffer)))
+  )
+
+(defun yas/org-very-safe-expand ()
+  (let ((yas/fallback-behavior 'return-nil)) (yas/expand)))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            ;; yasnippet (using the new org-cycle hooks)
+            (make-variable-buffer-local 'yas/trigger-key)
+            (setq yas/trigger-key [tab])
+            (add-to-list 'org-tab-first-hook 'yas/org-very-safe-expand)
+            (define-key yas/keymap [tab] 'yas/next-field)))
+
+
