@@ -1,5 +1,4 @@
 (add-to-list 'load-path "~/.emacs.d/")
-(global-subword-mode)
 
 ;;; Tab management
 
@@ -51,7 +50,7 @@ buffer read-only, so I suggest setting kill-read-only-ok to t."
 (global-linum-mode 1)
 (global-visual-line-mode 1)
 (add-hook 'linum-before-numbering-hook
-	  (lambda () (setq linum-format "%d ")))
+	    (lambda () (setq linum-format "%d ")))
 
 (fset 'insert-blank-line-previous
    [?\C-a return ?\C-p tab])
@@ -64,8 +63,6 @@ buffer read-only, so I suggest setting kill-read-only-ok to t."
 (global-set-key "\C-c\C-k" 'copy-line)
 
 (global-set-key (kbd "C-o") 'insert-blank-line-previous)
-(global-set-key (kbd "C-x C-f") 'lusty-file-explorer)
-(global-set-key (kbd "C-x C-b") 'lusty-buffer-explorer)
 
 (define-key global-map [f1] 'copy-to-register)
 (define-key global-map [f2] 'insert-register)
@@ -148,30 +145,28 @@ buffer read-only, so I suggest setting kill-read-only-ok to t."
       e.g. `HelloWorldString'."
   (interactive)
   (let* ((symbol-pos (bounds-of-thing-at-point 'symbol))
-	 case-fold-search symbol-at-point cstyle regexp func)
+	  case-fold-search symbol-at-point cstyle regexp func)
     (unless symbol-pos
       (error "No symbol at point"))
     (save-excursion
       (narrow-to-region (car symbol-pos) (cdr symbol-pos))
       (setq cstyle (string-match-p "_" (buffer-string))
-	    regexp (if cstyle "\\(?:\\_<\\|_\\)\\(\\w\\)" "\\([A-Z]\\)")
-	    func (if cstyle
-		     'capitalize
-		   (lambda (s)
-		     (concat (if (= (match-beginning 1)
-				    (car symbol-pos))
-				 ""
-			       "_")
-			     (downcase s)))))
+	        regexp (if cstyle "\\(?:\\_<\\|_\\)\\(\\w\\)" "\\([A-Z]\\)")
+		    func (if cstyle
+			          'capitalize
+			      (lambda (s)
+				     (concat (if (= (match-beginning 1)
+						        (car symbol-pos))
+						  ""
+					              "_")
+					          (downcase s)))))
       (goto-char (point-min))
       (while (re-search-forward regexp nil t)
 	(replace-match (funcall func (match-string 1))
-		       t nil))
+		              t nil))
       (widen))))
 
 ;; Line numbers in the margin
-(require 'init-linum)
-;;(global-linum-mode 1)
 
 (icomplete-mode 99)
 
@@ -285,8 +280,6 @@ buffer read-only, so I suggest setting kill-read-only-ok to t."
 
 (add-hook 'python-mode-hook '(lambda ()
                                  (local-set-key (kbd "RET") 'newline-and-indent)))
-
-(yas/load-directory "~/.emacs.d/local/snippets")
 
 
 (defun cur-file ()
